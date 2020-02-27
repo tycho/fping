@@ -43,6 +43,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#if HAVE_SYS_RANDOM_H
+#include <sys/random.h>
+#endif
 
 char* ping_buffer_ipv4 = 0;
 size_t ping_pkt_size_ipv4;
@@ -143,8 +146,15 @@ int socket_sendto_ping_ipv4(int s, struct sockaddr* saddr, socklen_t saddr_len, 
     icp->icmp_id = icmp_id_nr;
 
     if (random_data_flag) {
-        for (n = ((char*)&icp->icmp_data - (char*)icp); n < ping_pkt_size_ipv4; ++n) {
-            ping_buffer_ipv4[n] = random() & 0xFF;
+        ssize_t r = -1;
+#if HAVE_GETRANDOM
+        size_t nbytes = ping_pkt_size_ipv4 - (size_t)((uintptr_t)&icp->icmp_data - (uintptr_t)icp);
+        r = getrandom(&icp->icmp_data, nbytes, GRND_NONBLOCK);
+#endif
+        if (r == -1) {
+            for (n = ((char*)&icp->icmp_data - (char*)icp); n < ping_pkt_size_ipv4; ++n) {
+                ping_buffer_ipv4[n] = random() & 0xFF;
+            }
         }
     }
 

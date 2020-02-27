@@ -77,6 +77,7 @@ AC_CHECK_FUNC(sigaction)
 if test $ac_cv_func_sigaction = yes; then
     AC_DEFINE([USE_SIGACTION],[1],[Define if sigaction is available.])
 fi
+AC_CHECK_FUNC([getrandom], AC_DEFINE([HAVE_GETRANDOM], [1], [Define this if you have getrandom()]))
 
 AH_TOP([
 #ifndef CONFIG_H
@@ -95,7 +96,7 @@ AH_BOTTOM([
 ])
 
 dnl Checks for header files.
-AC_CHECK_HEADERS([unistd.h sys/file.h stdlib.h sys/select.h])
+AC_CHECK_HEADERS([unistd.h sys/file.h stdlib.h sys/random.h sys/select.h])
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

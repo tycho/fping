@@ -40,6 +40,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#if HAVE_SYS_RANDOM_H
+#include <sys/random.h>
+#endif
 
 #include <netinet/icmp6.h>
 
@@ -123,8 +126,15 @@ int socket_sendto_ping_ipv6(int s, struct sockaddr* saddr, socklen_t saddr_len, 
     icp->icmp6_id = icmp_id_nr;
 
     if (random_data_flag) {
-        for (n = sizeof(struct icmp6_hdr); n < ping_pkt_size_ipv6; ++n) {
-            ping_buffer_ipv6[n] = random() & 0xFF;
+        ssize_t r = -1;
+#if HAVE_GETRANDOM
+        size_t nbytes = ping_pkt_size_ipv6 - sizeof(struct icmp6_hdr);
+        r = getrandom(ping_buffer_ipv6 + sizeof(struct icmp6_hdr), nbytes, GRND_NONBLOCK);
+#endif
+        if (r == -1) {
+            for (n = sizeof(struct icmp6_hdr); n < ping_pkt_size_ipv6; ++n) {
+                ping_buffer_ipv6[n] = random() & 0xFF;
+            }
         }
     }
 
